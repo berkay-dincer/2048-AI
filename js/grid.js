@@ -202,11 +202,6 @@ Grid.prototype.move = function (direction) {
 
           // Update the score
           score += merged.value;
-
-          // The mighty 2048 tile
-          if (merged.value === 2048) {
-            won = true;
-          }
         } else {
           //if (debug) {
             //console.log(cell);
@@ -393,75 +388,6 @@ Grid.prototype.smoothness = function() {
   return smoothness;
 }
 
-Grid.prototype.monotonicity = function() {
-  var self = this;
-  var marked = [];
-  var queued = [];
-  var highestValue = 0;
-  var highestCell = {x:0, y:0};
-  for (var x=0; x<4; x++) {
-    marked.push([]);
-    queued.push([]);
-    for (var y=0; y<4; y++) {
-      marked[x].push(false);
-      queued[x].push(false);
-      if (this.cells[x][y] &&
-          this.cells[x][y].value > highestValue) {
-        highestValue = this.cells[x][y].value;
-        highestCell.x = x;
-        highestCell.y = y;
-      }
-    }
-  }
-
-  increases = 0;
-  cellQueue = [highestCell];
-  queued[highestCell.x][highestCell.y] = true;
-  markList = [highestCell];
-  markAfter = 1; // only mark after all queued moves are done, as if searching in parallel
-
-  var markAndScore = function(cell) {
-    markList.push(cell);
-    var value;
-    if (self.cellOccupied(cell)) {
-      value = Math.log(self.cellContent(cell).value) / Math.log(2);
-    } else {
-      value = 0;
-    }
-    for (direction in [0,1,2,3]) {
-      var vector = self.getVector(direction);
-      var target = { x: cell.x + vector.x, y: cell.y+vector.y }
-      if (self.withinBounds(target) && !marked[target.x][target.y]) {
-        if ( self.cellOccupied(target) ) {
-          targetValue = Math.log(self.cellContent(target).value ) / Math.log(2);
-          if ( targetValue > value ) {
-            //console.log(cell, value, target, targetValue);
-            increases += targetValue - value;
-          }
-        } 
-        if (!queued[target.x][target.y]) {
-          cellQueue.push(target);
-          queued[target.x][target.y] = true;
-        }
-      }
-    }
-    if (markAfter == 0) {
-      while (markList.length > 0) {
-        var cel = markList.pop();
-        marked[cel.x][cel.y] = true;
-      }
-      markAfter = cellQueue.length;
-    }
-  }
-
-  while (cellQueue.length > 0) {
-    markAfter--;
-    markAndScore(cellQueue.shift())
-  }
-
-  return -increases;
-}
-
 // measures how monotonic the grid is. This means the values of the tiles are strictly increasing
 // or decreasing in both the left/right and up/down directions
 Grid.prototype.monotonicity2 = function() {
@@ -564,16 +490,6 @@ Grid.prototype.valueSum = function() {
 
 // check for win
 Grid.prototype.isWin = function() {
-  var self = this;
-  for (var x=0; x<4; x++) {
-    for (var y=0; y<4; y++) {
-      if (self.cellOccupied(this.indexes[x][y])) {
-        if (self.cellContent(this.indexes[x][y]).value == 2048) {
-          return true;
-        }
-      }
-    }
-  }
   return false;
 }
 

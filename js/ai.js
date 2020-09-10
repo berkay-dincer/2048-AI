@@ -6,19 +6,27 @@ function AI(grid) {
 AI.prototype.eval = function() {
   var emptyCells = this.grid.availableCells().length;
 
-  var smoothWeight = 0.1,
+  var smoothWeight = 0.15,
       //monoWeight   = 0.0,
       //islandWeight = 0.0,
       mono2Weight  = 1.0,
       emptyWeight  = 2.7,
-      maxWeight    = 1.0;
+      maxWeight    = 1.2;
 
-  return this.grid.smoothness() * smoothWeight
-       //+ this.grid.monotonicity() * monoWeight
-       //- this.grid.islands() * islandWeight
-       + this.grid.monotonicity2() * mono2Weight
-       + Math.log(emptyCells) * emptyWeight
-       + this.grid.maxValue() * maxWeight;
+  const totalScore = this.grid.smoothness() * smoothWeight
+      //+ this.grid.monotonicity() * monoWeight
+      //- this.grid.islands() * islandWeight
+      + this.grid.monotonicity2() * mono2Weight
+      + Math.log(emptyCells) * emptyWeight
+      + this.grid.maxValue() * maxWeight;
+
+  // console.log("weighted smoothness score: " + this.grid.smoothness() * smoothWeight);
+  // console.log("weighted monotonicity score: " + this.grid.monotonicity2() * mono2Weight);
+  // console.log("weighted empty cells score: " + Math.log(emptyCells) * emptyWeight);
+  // console.log("weighted max value score: " + this.grid.maxValue() * maxWeight);
+  // console.log("Total score: " + totalScore);
+
+  return totalScore;
 };
 
 // alpha-beta depth first search
@@ -34,18 +42,12 @@ AI.prototype.search = function(depth, alpha, beta, positions, cutoffs) {
       var newGrid = this.grid.clone();
       if (newGrid.move(direction).moved) {
         positions++;
-        if (newGrid.isWin()) {
-          return { move: direction, score: 10000, positions: positions, cutoffs: cutoffs };
-        }
         var newAI = new AI(newGrid);
 
         if (depth == 0) {
           result = { move: direction, score: newAI.eval() };
         } else {
           result = newAI.search(depth-1, bestScore, beta, positions, cutoffs);
-          if (result.score > 9900) { // win
-            result.score--; // to slightly penalize higher depth from win
-          }
           positions = result.positions;
           cutoffs = result.cutoffs;
         }
@@ -55,7 +57,8 @@ AI.prototype.search = function(depth, alpha, beta, positions, cutoffs) {
           bestMove = direction;
         }
         if (bestScore > beta) {
-          cutoffs++
+          cutoffs++;
+          // console.log('score: ' + bestScore + ' at depth: ' + depth + ' move is: ' + bestMove);
           return { move: bestMove, score: beta, positions: positions, cutoffs: cutoffs };
         }
       }
